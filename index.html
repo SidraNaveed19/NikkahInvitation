@@ -501,18 +501,71 @@ $("#send").addEventListener("click",()=>{
 
 
 /* ---- SoundCloud nasheed: seek to 03:25 on invitation open; stop at closing section ---- */
+
 let nasheedPlayer = null;
 let nasheedReady = false;
 let nasheedStarted = false;
-(function(){
-  const tag = document.createElement('script');
-  tag.src = 'https://w.soundcloud.com/player/api.js';
-  tag.onload = function(){
-    const frame = document.getElementById('nasheedPlayer');
+
+(function () {
+  const tag = document.createElement("script");
+  tag.src = "https://w.soundcloud.com/player/api.js";
+
+  tag.onload = function () {
+    const frame = document.getElementById("nasheedPlayer");
+
     if (!frame || !window.SC || !window.SC.Widget) return;
+
     nasheedPlayer = window.SC.Widget(frame);
-    nasheedPlayer.bind(window.SC.Widget.Events.READY, function(){ nasheedReady = true; });
+
+    nasheedPlayer.bind(
+      window.SC.Widget.Events.READY,
+      function () {
+        nasheedReady = true;
+      }
+    );
   };
+
+  document.head.appendChild(tag);
+})();
+
+const envelope = document.getElementById("env");
+
+if (envelope) {
+  envelope.addEventListener("click", function startMusic() {
+    if (nasheedStarted) return;
+
+    // Wait if the SoundCloud player is not ready yet.
+    if (!nasheedReady || !nasheedPlayer) {
+      return;
+    }
+
+    nasheedStarted = true;
+
+    nasheedPlayer.seekTo(205000);
+    nasheedPlayer.play();
+  });
+}
+
+// Pause the nasheed near the end of the invitation.
+const closingSection = document.querySelector(".end");
+
+if (closingSection && "IntersectionObserver" in window) {
+  const stopNasheedAtEnd = new IntersectionObserver(
+    function (entries) {
+      if (
+        entries.some(entry => entry.isIntersecting) &&
+        nasheedPlayer
+      ) {
+        nasheedPlayer.pause();
+        stopNasheedAtEnd.disconnect();
+      }
+    },
+    { threshold: 0.2 }
+  );
+
+  stopNasheedAtEnd.observe(closingSection);
+}
+
   document.head.appendChild(tag);
 })();
 // The original click handler was registered before openEnv was reassigned,
