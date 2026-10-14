@@ -52,7 +52,19 @@ a{color:inherit}
 .seal svg{display:block;width:62%;height:62%;margin:19%}
 @keyframes pulse{50%{box-shadow:0 12px 24px rgba(0,0,0,.5),0 0 0 12px rgba(235,215,159,.14),inset 0 -6px 10px rgba(90,75,50,.28)}}
 .env-txt{position:absolute;left:0;right:0;bottom:11%;z-index:2;text-align:center;padding:0 1.2rem;color:var(--paper);transition:opacity .4s ease}
-.e-names{font:2rem/1.2 var(--script);color:var(--gold);margin:0 0 .6rem}
+
+.e-names {
+  display: block;
+  position: relative;
+  z-index: 5;
+  font: 2.2rem/1.3 var(--script);
+  color: #3D3528 !important;
+  text-shadow: none !important;
+  margin: 0 0 0.6rem;
+  opacity: 1;
+  visibility: visible;
+}
+
 .e-to{font:italic 1.15rem var(--serif);color:var(--gold-l);margin:0 0 .2rem}
 .e-inv{font:400 2.1rem/1.15 var(--serif);letter-spacing:.01em}
 .e-tap{font:300 .78rem var(--sans);letter-spacing:.2em;text-transform:uppercase;opacity:.75;margin-top:.9rem}
