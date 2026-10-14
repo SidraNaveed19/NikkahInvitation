@@ -490,31 +490,105 @@ $("#send").addEventListener("click",()=>{
 });
 
 
-/* ---- SoundCloud nasheed: seek to 03:25 on invitation open; stop at closing section ---- */
+/* ---- SoundCloud nasheed: start at 03:21 on envelope tap; stop at closing section ---- */
 let nasheedPlayer = null;
 let nasheedReady = false;
 let nasheedStarted = false;
-(function(){
+let nasheedSeekAttempts = 0;
+let nasheedLastSeekAt = 0;
+let nasheedAtTarget = false;
+let nasheedPendingTap = false;
+
+(function () {
   const tag = document.createElement('script');
   tag.src = 'https://w.soundcloud.com/player/api.js';
-  tag.onload = function(){
+
+  tag.onload = function () {
     const frame = document.getElementById('nasheedPlayer');
     if (!frame || !window.SC || !window.SC.Widget) return;
+
     nasheedPlayer = window.SC.Widget(frame);
-    nasheedPlayer.bind(window.SC.Widget.Events.READY, function(){ nasheedReady = true; });
+
+    nasheedPlayer.bind(window.SC.Widget.Events.READY, function () {
+      nasheedReady = true;
+      // If the player was still loading when the envelope was tapped,
+      // ask for another tap so iPhone Safari receives a fresh user gesture.
+      // Keep the pending flag until the next real tap. On iPhone,
+      // starting later without a new tap may be blocked by Safari.
+    });
+
+    // Mobile browsers may ignore a seek issued immediately before playback.
+    // Seek once playback begins, then verify the actual reported position.
+    nasheedPlayer.bind(window.SC.Widget.Events.PLAY, function () {
+      if (nasheedStarted && !nasheedAtTarget) {
+        requestNasheedSeek();
+      }
+    });
+
+    nasheedPlayer.bind(window.SC.Widget.Events.PLAY_PROGRESS, function (event) {
+      if (!nasheedStarted || nasheedAtTarget || !event) return;
+
+      if (typeof event.currentPosition === 'number' &&
+          event.currentPosition >= 195000) {
+        nasheedAtTarget = true;
+        return;
+      }
+
+      // If the phone ignored the first seek, retry a few times while playing.
+      if (nasheedSeekAttempts < 4 &&
+          Date.now() - nasheedLastSeekAt > 900) {
+        requestNasheedSeek();
+      }
+    });
   };
+
   document.head.appendChild(tag);
 })();
-// The original click handler was registered before openEnv was reassigned,
-// so reassigning the function did not attach the music logic. Listen directly.
-document.getElementById('env').addEventListener('click', function startNasheedFromTap(){
-  if (nasheedStarted) return;
-  if (!nasheedReady || !nasheedPlayer) return; // player must be ready before the envelope is tapped
-  nasheedStarted = true;
-  // Call play during the user's tap, then seek to 03:25.
-  nasheedPlayer.play();
+
+function requestNasheedSeek() {
+  if (!nasheedPlayer || !nasheedReady || nasheedAtTarget ||
+      nasheedSeekAttempts >= 4) return;
+
+  nasheedSeekAttempts++;
+  nasheedLastSeekAt = Date.now();
+
+  // 03:21 = 201 seconds = 201000 milliseconds.
   nasheedPlayer.seekTo(201000);
+}
+
+function startNasheedPlaybackFromTap() {
+  if (nasheedStarted || !nasheedReady || !nasheedPlayer) return;
+
+  nasheedPendingTap = false;
+  nasheedStarted = true;
+  nasheedSeekAttempts = 0;
+  nasheedAtTarget = false;
+
+  // Start directly from the tap to satisfy iPhone Safari's user-gesture rule.
+  // The PLAY event then seeks to 03:21 and progress events verify/retry it.
+  nasheedPlayer.play();
+  setTimeout(requestNasheedSeek, 350);
+}
+
+document.getElementById('env').addEventListener('click', function () {
+  if (nasheedStarted) return;
+
+  if (!nasheedReady || !nasheedPlayer) {
+    nasheedPendingTap = true;
+    return;
+  }
+
+  startNasheedPlaybackFromTap();
 });
+
+// If the player was still loading on the envelope tap, the next tap anywhere
+// on the page starts it directly from that new user gesture.
+document.addEventListener('click', function () {
+  if (nasheedPendingTap && nasheedReady && !nasheedStarted) {
+    startNasheedPlaybackFromTap();
+  }
+});
+
 const closingSection = document.querySelector('.end');
 if (closingSection && 'IntersectionObserver' in window) {
   const stopNasheedAtEnd = new IntersectionObserver(entries => {
@@ -522,7 +596,8 @@ if (closingSection && 'IntersectionObserver' in window) {
       nasheedPlayer.pause();
       stopNasheedAtEnd.disconnect();
     }
-  }, {threshold: 0.2});
+  }, { threshold: 0.2 });
+
   stopNasheedAtEnd.observe(closingSection);
 }
 
