@@ -519,22 +519,55 @@ let nasheedStarted = false;
 document.getElementById('env').addEventListener('click', function startNasheedFromTap(){
   if (nasheedStarted) return;
   if (!nasheedReady || !nasheedPlayer) return; // player must be ready before the envelope is tapped
+  
+let nasheedPlayer = null;
+let nasheedReady = false;
+let nasheedStarted = false;
+
+(function () {
+  const script = document.createElement("script");
+  script.src = "https://w.soundcloud.com/player/api.js";
+
+  script.onload = function () {
+    const frame = document.getElementById("nasheedPlayer");
+    if (!frame || !window.SC) return;
+
+    nasheedPlayer = window.SC.Widget(frame);
+
+    nasheedPlayer.bind(window.SC.Widget.Events.READY, function () {
+      nasheedReady = true;
+    });
+  };
+
+  document.head.appendChild(script);
+})();
+
+document.getElementById("env").addEventListener("click", function () {
+  if (nasheedStarted) return;
+
+  if (!nasheedReady || !nasheedPlayer) {
+    alert("Please tap the envelope again in a moment to play the nasheed.");
+    return;
+  }
+
   nasheedStarted = true;
-  // Call play during the user's tap, then seek to 03:25.
-  nasheedPlayer.play();
+
+  // Start from 03:21
   nasheedPlayer.seekTo(201000);
+  nasheedPlayer.play();
 });
-const closingSection = document.querySelector('.end');
-if (closingSection && 'IntersectionObserver' in window) {
-  const stopNasheedAtEnd = new IntersectionObserver(entries => {
+
+const closingSection = document.querySelector(".end");
+
+if (closingSection && "IntersectionObserver" in window) {
+  const stopNasheedAtEnd = new IntersectionObserver(function (entries) {
     if (entries.some(entry => entry.isIntersecting) && nasheedPlayer) {
       nasheedPlayer.pause();
       stopNasheedAtEnd.disconnect();
     }
-  }, {threshold: 0.2});
+  }, { threshold: 0.2 });
+
   stopNasheedAtEnd.observe(closingSection);
 }
 
-</script>
-</body>
 </html>
