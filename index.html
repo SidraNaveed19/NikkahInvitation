@@ -52,7 +52,6 @@ a{color:inherit}
 .seal svg{display:block;width:62%;height:62%;margin:19%}
 @keyframes pulse{50%{box-shadow:0 12px 24px rgba(0,0,0,.5),0 0 0 12px rgba(235,215,159,.14),inset 0 -6px 10px rgba(90,75,50,.28)}}
 .env-txt{position:absolute;left:0;right:0;bottom:11%;z-index:2;text-align:center;padding:0 1.2rem;color:var(--paper);transition:opacity .4s ease}
-
 .e-names {
   display: block;
   position: relative;
@@ -361,18 +360,8 @@ a{color:inherit}
 
 </div>
 
-
-<!-- SoundCloud nasheed player -->
-<iframe
-  id="nasheedPlayer"
-  title="Wedding nasheed audio"
-  allow="autoplay; encrypted-media"
-  scrolling="no"
-  frameborder="0"
-  style="position:fixed;left:-10000px;bottom:0;width:1px;height:1px;border:0;"
-  src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/soundcloud%253Atracks%253A796193056&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false&visual=false">
-</iframe>
-
+<!-- SoundCloud nasheed player, kept visually hidden to preserve the original card design. -->
+<iframe id="nasheedPlayer" title="Wedding nasheed audio" aria-hidden="true" allow="autoplay; encrypted-media" scrolling="no" frameborder="no" style="position:fixed;left:-10000px;top:0;width:1px;height:1px;border:0;pointer-events:none" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/soundcloud%253Atracks%253A796193056&color=%2377765B&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false&visual=false"></iframe>
 <script>
 /* ============ EDIT DETAILS HERE ============ */
 const C={
@@ -521,55 +510,22 @@ let nasheedStarted = false;
 document.getElementById('env').addEventListener('click', function startNasheedFromTap(){
   if (nasheedStarted) return;
   if (!nasheedReady || !nasheedPlayer) return; // player must be ready before the envelope is tapped
-  
-let nasheedPlayer = null;
-let nasheedReady = false;
-let nasheedStarted = false;
-
-(function () {
-  const script = document.createElement("script");
-  script.src = "https://w.soundcloud.com/player/api.js";
-
-  script.onload = function () {
-    const frame = document.getElementById("nasheedPlayer");
-    if (!frame || !window.SC) return;
-
-    nasheedPlayer = window.SC.Widget(frame);
-
-    nasheedPlayer.bind(window.SC.Widget.Events.READY, function () {
-      nasheedReady = true;
-    });
-  };
-
-  document.head.appendChild(script);
-})();
-
-document.getElementById("env").addEventListener("click", function () {
-  if (nasheedStarted) return;
-
-  if (!nasheedReady || !nasheedPlayer) {
-    alert("Please tap the envelope again in a moment to play the nasheed.");
-    return;
-  }
-
   nasheedStarted = true;
-
-  // Start from 03:21
-  nasheedPlayer.seekTo(201000);
+  // Call play during the user's tap, then seek to 03:25.
   nasheedPlayer.play();
+  nasheedPlayer.seekTo(205000);
 });
-
-const closingSection = document.querySelector(".end");
-
-if (closingSection && "IntersectionObserver" in window) {
-  const stopNasheedAtEnd = new IntersectionObserver(function (entries) {
+const closingSection = document.querySelector('.end');
+if (closingSection && 'IntersectionObserver' in window) {
+  const stopNasheedAtEnd = new IntersectionObserver(entries => {
     if (entries.some(entry => entry.isIntersecting) && nasheedPlayer) {
       nasheedPlayer.pause();
       stopNasheedAtEnd.disconnect();
     }
-  }, { threshold: 0.2 });
-
+  }, {threshold: 0.2});
   stopNasheedAtEnd.observe(closingSection);
 }
 
+</script>
+</body>
 </html>
